@@ -1,13 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { GoogleGenAI, Type } from "@google/genai";
-import { 
-  Upload, 
-  FileText, 
-  Pill, 
-  Info, 
-  AlertCircle, 
-  CheckCircle2, 
-  ChevronRight, 
+import {
+  Upload,
+  FileText,
+  Pill,
+  Info,
+  AlertCircle,
+  CheckCircle2,
+  ChevronRight,
   RefreshCw,
   Camera,
   Search,
@@ -64,8 +64,8 @@ export default function App() {
     setIsCameraOpen(true);
     setError(null);
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: 'environment' } 
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment' }
       });
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
@@ -103,7 +103,7 @@ export default function App() {
     }
   };
 
-  const analyzePrescription = async () => {
+  const analyzePrescription = async (retryCount = 0): Promise<void> => {
     if (!image) return;
 
     setIsAnalyzing(true);
@@ -111,9 +111,9 @@ export default function App() {
 
     try {
       const base64Data = image.split(',')[1];
-      
+
       const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
+        model: "gemini-2.0-flash", // Switched to a more stable model
         contents: [
           {
             parts: [
@@ -183,9 +183,17 @@ export default function App() {
 
       const result = JSON.parse(response.text || '{}');
       setAnalysis(result);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      setError("Failed to analyze the prescription. Please ensure the image is clear and try again.");
+
+      // Handle 503 (Service Unavailable) with a retry
+      if (err.status === 503 && retryCount < 2) {
+        const delay = Math.pow(2, retryCount) * 1000;
+        setTimeout(() => analyzePrescription(retryCount + 1), delay);
+        return;
+      }
+
+      setError("The AI service is currently busy. Please wait a moment and try again.");
     } finally {
       setIsAnalyzing(false);
     }
@@ -196,7 +204,7 @@ export default function App() {
       {/* Header */}
       <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200">
         <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             className="flex items-center gap-2"
@@ -209,7 +217,7 @@ export default function App() {
               <p className="text-[10px] uppercase tracking-widest font-semibold text-slate-500">Intelligent Health Assistant</p>
             </div>
           </motion.div>
-          <motion.button 
+          <motion.button
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             whileHover={{ rotate: 180 }}
@@ -230,7 +238,7 @@ export default function App() {
 
       <main className="max-w-5xl mx-auto px-4 pt-8">
         {isApiKeyMissing && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             className="mb-8 p-6 bg-amber-50 border border-amber-200 rounded-3xl flex flex-col md:flex-row items-center gap-4 text-amber-800"
@@ -241,14 +249,14 @@ export default function App() {
             <div className="flex-1 text-center md:text-left">
               <h3 className="font-bold text-lg">Configuration Required</h3>
               <p className="text-sm opacity-90">
-                The Gemini API key is missing. If you are deploying to Netlify, please add 
-                <code className="mx-1 px-1 bg-amber-100 rounded font-bold">GEMINI_API_KEY</code> 
-                 to your environment variables in the Netlify dashboard.
+                The Gemini API key is missing. If you are deploying to Netlify, please add
+                <code className="mx-1 px-1 bg-amber-100 rounded font-bold">GEMINI_API_KEY</code>
+                to your environment variables in the Netlify dashboard.
               </p>
             </div>
-            <a 
-              href="https://ai.google.dev/" 
-              target="_blank" 
+            <a
+              href="https://ai.google.dev/"
+              target="_blank"
               rel="noopener noreferrer"
               className="px-4 py-2 bg-amber-600 text-white rounded-xl text-sm font-bold hover:bg-amber-700 transition-colors"
             >
@@ -258,7 +266,7 @@ export default function App() {
         )}
 
         {!analysis && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="max-w-2xl mx-auto text-center mb-12"
@@ -276,7 +284,7 @@ export default function App() {
               Understand Your Prescription Better
             </h2>
             <p className="text-lg text-slate-600">
-              Upload or capture a photo of your doctor's prescription to decode handwriting, 
+              Upload or capture a photo of your doctor's prescription to decode handwriting,
               understand dosages, and find more affordable generic alternatives.
             </p>
           </motion.div>
@@ -288,14 +296,14 @@ export default function App() {
             "space-y-6",
             analysis ? "lg:col-span-4" : "lg:col-span-12 max-w-2xl mx-auto w-full"
           )}>
-            <motion.div 
+            <motion.div
               layout
               className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden"
             >
               <div className="p-6">
                 {!image && !isCameraOpen ? (
                   <div className="space-y-4">
-                    <div 
+                    <div
                       onClick={() => fileInputRef.current?.click()}
                       className="border-2 border-dashed border-slate-200 rounded-2xl p-12 flex flex-col items-center justify-center gap-4 cursor-pointer hover:border-medical-600 hover:bg-medical-50 transition-all group relative overflow-hidden"
                     >
@@ -306,8 +314,8 @@ export default function App() {
                         <p className="text-lg font-semibold text-slate-900">Click to upload or drag and drop</p>
                         <p className="text-sm text-slate-500">PNG, JPG or JPEG (max. 10MB)</p>
                       </div>
-                      <input 
-                        type="file" 
+                      <input
+                        type="file"
                         ref={fileInputRef}
                         onChange={handleFileUpload}
                         accept="image/*"
@@ -322,7 +330,7 @@ export default function App() {
                       <span className="relative px-4 bg-white text-xs font-bold text-slate-400 uppercase tracking-widest">or</span>
                     </div>
 
-                    <button 
+                    <button
                       onClick={startCamera}
                       className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold flex items-center justify-center gap-3 hover:bg-slate-800 transition-all shadow-lg shadow-slate-900/10"
                     >
@@ -333,10 +341,10 @@ export default function App() {
                 ) : isCameraOpen ? (
                   <div className="space-y-4">
                     <div className="relative aspect-[3/4] rounded-2xl overflow-hidden bg-black border border-slate-200">
-                      <video 
-                        ref={videoRef} 
-                        autoPlay 
-                        playsInline 
+                      <video
+                        ref={videoRef}
+                        autoPlay
+                        playsInline
                         className="w-full h-full object-cover"
                       />
                       <div className="absolute inset-0 border-2 border-white/30 m-8 rounded-xl pointer-events-none">
@@ -345,14 +353,14 @@ export default function App() {
                         <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-medical-500"></div>
                         <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-medical-500"></div>
                       </div>
-                      <button 
+                      <button
                         onClick={stopCamera}
                         className="absolute top-4 right-4 p-2 bg-black/50 hover:bg-black/70 text-white rounded-full backdrop-blur-sm transition-colors"
                       >
                         <X className="w-5 h-5" />
                       </button>
                     </div>
-                    <button 
+                    <button
                       onClick={capturePhoto}
                       className="w-full py-4 bg-medical-600 text-white rounded-2xl font-bold flex items-center justify-center gap-3 hover:bg-medical-700 transition-all shadow-lg shadow-medical-600/20"
                     >
@@ -366,13 +374,13 @@ export default function App() {
                 ) : (
                   <div className="space-y-4">
                     <div className="relative aspect-[3/4] rounded-2xl overflow-hidden bg-slate-100 border border-slate-200 group">
-                      <img 
-                        src={image!} 
-                        alt="Prescription" 
+                      <img
+                        src={image!}
+                        alt="Prescription"
                         className="w-full h-full object-contain"
                       />
                       {isAnalyzing && (
-                        <motion.div 
+                        <motion.div
                           initial={{ top: "0%" }}
                           animate={{ top: "100%" }}
                           transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
@@ -380,7 +388,7 @@ export default function App() {
                         />
                       )}
                       {!analysis && !isAnalyzing && (
-                        <button 
+                        <button
                           onClick={() => setImage(null)}
                           className="absolute top-4 right-4 p-2 bg-black/50 hover:bg-black/70 text-white rounded-full backdrop-blur-sm transition-colors opacity-0 group-hover:opacity-100 transition-opacity"
                         >
@@ -388,10 +396,10 @@ export default function App() {
                         </button>
                       )}
                     </div>
-                    
+
                     {!analysis && (
                       <button
-                        onClick={analyzePrescription}
+                        onClick={() => analyzePrescription()}
                         disabled={isAnalyzing}
                         className="w-full py-4 bg-medical-600 hover:bg-medical-700 disabled:bg-slate-300 text-white rounded-2xl font-bold text-lg shadow-lg shadow-medical-600/20 transition-all flex items-center justify-center gap-2"
                       >
@@ -414,7 +422,7 @@ export default function App() {
             </motion.div>
 
             {error && (
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 className="bg-red-50 border border-red-100 p-4 rounded-2xl flex gap-3 text-red-700"
@@ -428,7 +436,7 @@ export default function App() {
           {/* Right Column: Analysis Results */}
           <AnimatePresence mode="wait">
             {analysis && (
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
@@ -436,7 +444,7 @@ export default function App() {
               >
                 {/* Patient Info Summary */}
                 {analysis.patientInfo && (
-                  <motion.div 
+                  <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex flex-wrap gap-8"
@@ -468,14 +476,14 @@ export default function App() {
                     <Pill className="w-5 h-5 text-medical-600" />
                     Prescribed Medicines
                   </h3>
-                  
+
                   {analysis.medicines.map((med, idx) => (
                     <MedicineCard key={idx} medicine={med} index={idx} />
                   ))}
                 </div>
 
                 {analysis.generalAdvice && (
-                  <motion.div 
+                  <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.5 }}
@@ -489,7 +497,7 @@ export default function App() {
                   </motion.div>
                 )}
 
-                <motion.div 
+                <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.6 }}
@@ -498,8 +506,8 @@ export default function App() {
                   <div className="relative z-10">
                     <h4 className="text-xl font-bold mb-2">Medical Disclaimer</h4>
                     <p className="text-slate-400 text-sm leading-relaxed">
-                      This analysis is AI-generated and for informational purposes only. 
-                      Handwriting recognition can be imperfect. Always verify with your 
+                      This analysis is AI-generated and for informational purposes only.
+                      Handwriting recognition can be imperfect. Always verify with your
                       doctor or pharmacist before taking any medication or switching to alternatives.
                     </p>
                   </div>
@@ -549,7 +557,7 @@ function MedicineCard({ medicine, index }: { medicine: Medicine; index: number }
   };
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.1 }}
@@ -557,7 +565,7 @@ function MedicineCard({ medicine, index }: { medicine: Medicine; index: number }
     >
       {/* Card Header with Accent Bar */}
       <div className="h-2 bg-medical-600 w-full" />
-      
+
       <div className="p-6">
         <div className="flex flex-col lg:flex-row justify-between gap-6 mb-8">
           <div className="flex-1 space-y-3">
@@ -567,7 +575,7 @@ function MedicineCard({ medicine, index }: { medicine: Medicine; index: number }
                 {medicine.strength}
               </span>
             </div>
-            
+
             <div className="flex flex-wrap gap-4 text-slate-500">
               <div className="flex items-center gap-1.5 text-sm font-medium">
                 <Stethoscope className="w-4 h-4 text-medical-600" />
@@ -579,9 +587,9 @@ function MedicineCard({ medicine, index }: { medicine: Medicine; index: number }
               </div>
             </div>
           </div>
-          
+
           <div className="shrink-0 flex flex-col items-end gap-3">
-            <motion.a 
+            <motion.a
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               href={getBuyLink(medicine.name)}
@@ -630,12 +638,12 @@ function MedicineCard({ medicine, index }: { medicine: Medicine; index: number }
           </div>
         </div>
 
-        <button 
+        <button
           onClick={() => setShowAlternatives(!showAlternatives)}
           className={cn(
             "w-full py-4 rounded-2xl font-bold text-sm transition-all flex items-center justify-center gap-2 border-2",
-            showAlternatives 
-              ? "bg-medical-600 border-medical-600 text-white shadow-lg shadow-medical-600/20" 
+            showAlternatives
+              ? "bg-medical-600 border-medical-600 text-white shadow-lg shadow-medical-600/20"
               : "bg-white border-slate-200 text-slate-600 hover:border-medical-600 hover:text-medical-600"
           )}
         >
@@ -645,7 +653,7 @@ function MedicineCard({ medicine, index }: { medicine: Medicine; index: number }
 
         <AnimatePresence>
           {showAlternatives && (
-            <motion.div 
+            <motion.div
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: 'auto', opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
@@ -660,8 +668,8 @@ function MedicineCard({ medicine, index }: { medicine: Medicine; index: number }
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {medicine.alternatives.map((alt, aIdx) => (
-                    <motion.div 
-                      key={aIdx} 
+                    <motion.div
+                      key={aIdx}
                       initial={{ opacity: 0, scale: 0.95 }}
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{ delay: aIdx * 0.05 }}
@@ -676,13 +684,13 @@ function MedicineCard({ medicine, index }: { medicine: Medicine; index: number }
                           {alt.priceEstimate}
                         </div>
                       </div>
-                      
+
                       <div className="flex items-start gap-2 text-slate-600 mb-6 bg-white/50 p-3 rounded-xl border border-slate-100">
                         <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0 mt-0.5" />
                         <p className="text-xs font-medium leading-relaxed">{alt.reason}</p>
                       </div>
 
-                      <motion.a 
+                      <motion.a
                         whileHover={{ x: 4 }}
                         href={getBuyLink(alt.name)}
                         target="_blank"
