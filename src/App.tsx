@@ -103,8 +103,11 @@ export default function App() {
     }
   };
 
-  const analyzePrescription = async (retryCount = 0): Promise<void> => {
+  const analyzePrescription = async (retryCount = 0, modelIndex = 0): Promise<void> => {
     if (!image) return;
+
+    const models = ["gemini-3.1-pro-preview", "gemini-3-flash-preview"];
+    const currentModel = models[modelIndex];
 
     setIsAnalyzing(true);
     setError(null);
@@ -113,7 +116,7 @@ export default function App() {
       const base64Data = image.split(',')[1];
 
       const response = await ai.models.generateContent({
-        model: "gemini-2.0-flash", // Switched to a more stable model
+        model: currentModel,
         contents: [
           {
             parts: [
@@ -184,16 +187,23 @@ export default function App() {
       const result = JSON.parse(response.text || '{}');
       setAnalysis(result);
     } catch (err: any) {
-      console.error(err);
+      console.error(`Error with model ${currentModel}:`, err);
 
-      // Handle 503 (Service Unavailable) with a retry
-      if (err.status === 503 && retryCount < 2) {
-        const delay = Math.pow(2, retryCount) * 1000;
-        setTimeout(() => analyzePrescription(retryCount + 1), delay);
+      // Handle 503 (Service Unavailable) or 429 (Rate Limit)
+      if ((err.status === 503 || err.status === 429) && retryCount < 2) {
+        const delay = Math.pow(2, retryCount) * 1500; // Slightly longer delay
+        setTimeout(() => analyzePrescription(retryCount + 1, modelIndex), delay);
         return;
       }
 
-      setError("The AI service is currently busy. Please wait a moment and try again.");
+      // If one model fails completely, try the fallback model
+      if (modelIndex < models.length - 1) {
+        console.log(`Switching to fallback model: ${models[modelIndex + 1]}`);
+        analyzePrescription(0, modelIndex + 1);
+        return;
+      }
+
+      setError("The AI service is currently experiencing high demand. Please wait 30 seconds and try one more time.");
     } finally {
       setIsAnalyzing(false);
     }
