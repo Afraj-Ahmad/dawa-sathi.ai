@@ -1,0 +1,55 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "A user of the application",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email"]
+    },
+    "Analysis": {
+      "title": "Analysis",
+      "description": "An AI generated analysis of a prescription or lab report",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "type": { "enum": ["prescription", "lab_report"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "data": { "type": "object", "description": "The JSON output of the Gemini analysis" }
+      },
+      "required": ["userId", "type", "createdAt", "data"]
+    },
+    "SharedAnalysis": {
+      "title": "SharedAnalysis",
+      "description": "A time-limited shared analysis",
+      "type": "object",
+      "properties": {
+        "ownerId": { "type": "string" },
+        "type": { "enum": ["prescription", "lab_report"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "expiresAt": { "type": "string", "format": "date-time" },
+        "data": { "type": "object", "description": "The JSON output of the Gemini analysis" }
+      },
+      "required": ["ownerId", "type", "createdAt", "expiresAt", "data"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "User profiles"
+    },
+    "/users/{userId}/analyses/{analysisId}": {
+      "schema": { "$ref": "#/entities/Analysis" },
+      "description": "User's past analyses"
+    },
+    "/shared_analyses/{shareId}": {
+      "schema": { "$ref": "#/entities/SharedAnalysis" },
+      "description": "Public time-limited shared analyses"
+    }
+  }
+}

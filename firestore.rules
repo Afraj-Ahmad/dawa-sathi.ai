@@ -1,0 +1,70 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Primitives
+    function isSignedIn() { return request.auth != null; }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+    function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
+
+    // Helpers
+    function isValidUser(data) {
+      return data.keys().hasAll(['email']) && data.keys().size() <= 4 &&
+             (data.get('uid', '') is string) &&
+             (data.get('email', '') is string) &&
+             (data.get('displayName', '') is string || data.get('displayName', null) == null) &&
+             (data.get('createdAt', null) == null || data.get('createdAt', '') == request.time);
+    }
+
+    function isValidAnalysis(data, userId) {
+      // Must exactly have fields: userId, type, createdAt, data
+      return data.keys().hasAll(['userId', 'type', 'createdAt', 'data']) && 
+             data.keys().size() == 4 &&
+             data.userId == userId &&
+             data.userId == request.auth.uid &&
+             (data.type == 'prescription' || data.type == 'lab_report') &&
+             data.createdAt == request.time &&
+             data.data is map;
+    }
+
+    function isValidSharedAnalysis(data) {
+      return data.keys().hasAll(['ownerId', 'type', 'createdAt', 'expiresAt', 'data']) && 
+             data.keys().size() == 5 &&
+             data.ownerId == request.auth.uid &&
+             (data.type == 'prescription' || data.type == 'lab_report') &&
+             data.createdAt == request.time &&
+             data.data is map;
+    }
+
+    match /shared_analyses/{shareId} {
+      allow get: if existing().expiresAt > request.time;
+      allow create: if isSignedIn() && isValidSharedAnalysis(incoming());
+    }
+
+    match /users/{userId} {
+      allow get: if isSignedIn() && isValidId(userId) && request.auth.uid == userId;
+      // We do not allow list of users, only by specific current user
+      
+      allow create: if isSignedIn() && isValidId(userId) && request.auth.uid == userId && isValidUser(incoming());
+      
+      // Update allowed only on certain fields
+      allow update: if isSignedIn() && isValidId(userId) && request.auth.uid == userId && (
+        incoming().diff(existing()).affectedKeys().hasOnly(['displayName'])
+      );
+      
+      match /analyses/{analysisId} {
+        allow get: if isSignedIn() && isValidId(userId) && isValidId(analysisId) && request.auth.uid == userId;
+        allow list: if isSignedIn() && isValidId(userId) && request.auth.uid == userId;
+        allow create: if isSignedIn() && isValidId(userId) && isValidId(analysisId) && request.auth.uid == userId && isValidAnalysis(incoming(), userId);
+        // Deleting old history might be desirable
+        allow delete: if isSignedIn() && isValidId(userId) && isValidId(analysisId) && request.auth.uid == userId;
+      }
+    }
+  }
+}
