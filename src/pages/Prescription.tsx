@@ -52,6 +52,10 @@ export default function Prescription() {
 
   const isApiKeyMissing = !process.env.GEMINI_API_KEY;
 
+  useEffect(() => {
+    document.title = "Medicine | dawa sathi.ai";
+  }, []);
+
   const saveToHistory = async (result: PrescriptionAnalysis) => {
     if (!auth.currentUser) return;
     try {
@@ -344,13 +348,13 @@ export default function Prescription() {
               layout
               className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden"
             >
-              <div className="p-6">
+              <div className="p-4 sm:p-6">
                 {!image && !isCameraOpen ? (
                   <div className="space-y-4">
                     <div 
                       onClick={() => fileInputRef.current?.click()}
                       className={cn(
-                        "border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-2xl p-12 flex flex-col items-center justify-center gap-4 cursor-pointer hover:border-medical-600 dark:hover:border-medical-500 hover:bg-medical-50 dark:hover:bg-medical-900/20 transition-all group relative overflow-hidden",
+                        "border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-2xl p-6 sm:p-12 flex flex-col items-center justify-center gap-4 cursor-pointer hover:border-medical-600 dark:hover:border-medical-500 hover:bg-medical-50 dark:hover:bg-medical-900/20 transition-all group relative overflow-hidden",
                         isUploading && "opacity-50 pointer-events-none"
                       )}
                     >

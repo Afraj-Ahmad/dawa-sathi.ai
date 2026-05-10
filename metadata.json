@@ -1,5 +1,5 @@
 {
-  "name": "RxDecoder",
+  "name": "dawa sathi.ai",
   "description": "Upload doctor prescriptions to decode medicine details, understand dosages, and find generic alternatives with the same composition.",
   "requestFramePermissions": ["camera"]
 }

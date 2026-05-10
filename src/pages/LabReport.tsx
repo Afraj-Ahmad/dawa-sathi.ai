@@ -27,6 +27,10 @@ export default function LabReport() {
 
   const isApiKeyMissing = !process.env.GEMINI_API_KEY;
 
+  useEffect(() => {
+    document.title = "Lab Reports | dawa sathi.ai";
+  }, []);
+
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -250,13 +254,13 @@ export default function LabReport() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Upload Column */}
         <div className={cn("space-y-6", analysis ? "lg:col-span-4" : "lg:col-span-12 max-w-2xl mx-auto w-full")}>
-           <motion.div layout className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden p-6">
+            <motion.div layout className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden p-4 sm:p-6">
               {!image && !isCameraOpen ? (
                 <div className="space-y-4">
                   <div 
                     onClick={() => fileInputRef.current?.click()}
                     className={cn(
-                      "border-2 border-dashed border-emerald-200 rounded-2xl p-12 flex flex-col items-center justify-center gap-4 cursor-pointer hover:border-emerald-600 hover:bg-emerald-50 transition-all group relative",
+                      "border-2 border-dashed border-emerald-200 rounded-2xl p-6 sm:p-12 flex flex-col items-center justify-center gap-4 cursor-pointer hover:border-emerald-600 hover:bg-emerald-50 transition-all group relative",
                       isUploading && "opacity-50 pointer-events-none"
                     )}
                   >

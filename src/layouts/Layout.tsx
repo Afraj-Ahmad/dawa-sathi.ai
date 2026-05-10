@@ -35,7 +35,7 @@ export default function Layout() {
                 <Activity className="text-white w-6 h-6" />
               </motion.div>
               <div>
-                <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white group-hover:text-medical-600 dark:group-hover:text-medical-500 transition-colors">RxDecoder</h1>
+                <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white group-hover:text-medical-600 dark:group-hover:text-medical-500 transition-colors">dawa sathi.ai</h1>
                 <p className="hidden sm:block text-[10px] uppercase tracking-widest font-semibold text-slate-500 dark:text-slate-400">Intelligent Health Assistant</p>
               </div>
             </Link>
@@ -164,7 +164,7 @@ export default function Layout() {
       </div>
       
       <footer className="bg-slate-900 dark:bg-slate-950 text-slate-400 py-8 border-t border-slate-800 text-center text-sm transition-colors duration-300 mt-auto">
-        <p>© 2026 RxDecoder. All rights reserved.</p>
+        <p>© 2026 dawa sathi.ai. All rights reserved.</p>
       </footer>
     </div>
   );

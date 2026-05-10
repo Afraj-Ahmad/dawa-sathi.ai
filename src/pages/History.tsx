@@ -14,6 +14,10 @@ export default function History() {
   const [historyItems, setHistoryItems] = useState<HistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
 
+  useEffect(() => {
+    document.title = "History | dawa sathi.ai";
+  }, []);
+
   const [filterType, setFilterType] = useState<'all' | 'prescription' | 'lab_report'>('all');
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');

@@ -12,6 +12,10 @@ export default function SharedAnalysisView() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    document.title = "Shared Analysis | dawa sathi.ai";
+  }, []);
+
+  useEffect(() => {
     const fetchSharedData = async () => {
       if (!shareId) return;
       try {
